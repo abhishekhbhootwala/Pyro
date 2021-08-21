@@ -1,0 +1,34 @@
+name: Pyro
+
+on: workflow_dispatch
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download Ngrok.
+      run: wget -O ngrok.zip https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-arm.zip && unzip ngrok.zip && chmod +x ngrok && sudo apt install binfmt-support qemu qemu-user-static -y
+    - name: Connect To Ngrok Account.
+      run: ./ngrok authtoken $NGROK_AUTH_TOKEN
+      env:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+    - name: Add User.
+      run: sudo useradd -m nichi &> /dev/null && sudo adduser nichi sudo &> /dev/null && echo 'nichi:@nichi' | sudo chpasswd && sudo sed -i 's/\/bin\/sh/\/bin\/bash/g' /etc/passwd && sudo usermod -aG sudo nichi
+    - name: Make Tunnel.
+      run: ./ngrok tcp 22 > /dev/null &
+    - name: Connect To Pyro With CPU 2 Core - 7GB Ram - 255 SSD.
+      run: | 
+        echo Installing Successfully!, If Pyro Dies Please Rebuild Again!
+        echo Ip and Port:
+        curl -s localhost:4040/api/tunnels | jq -r .tunnels[0].public_url || echo "Can't get NGROK tunnel, make sure NGROK_AUTH_TOKEN right in Settings> Secrets> Repository secret. Maybe your previous VM is still running: https://dashboard.ngrok.com/status/tunnels "
+        echo Username: nichi
+        echo Password: @nichi
+        echo Please Login To Your Pyro!!
+        ping -n 10 127.0.0.1 > /dev/null &
+    - name: Made Successfully! You Can Close Tab Now.
+      run: | 
+        wget https://raw.githubusercontent.com/abhishekhbhootwala/Pyro/master/loop.sh
+        chmod +x loop.sh
+        ./loop.sh
